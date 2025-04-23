@@ -4,6 +4,16 @@ import Flutter
 import Foundation
 import UIKit
 
+fileprivate class SingleEventStore {
+    public let eventStore: EKEventStore
+
+    public static let shared = SingleEventStore()
+
+    private init() {
+        eventStore = EKEventStore()
+    }
+}
+
 extension Date {
     var millisecondsSinceEpoch: Double { return self.timeIntervalSince1970 * 1000.0 }
 }
@@ -90,7 +100,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
     let calendarNotFoundErrorMessageFormat = "The calendar with the ID %@ could not be found"
     let calendarReadOnlyErrorMessageFormat = "Calendar with ID %@ is read-only"
     let eventNotFoundErrorMessageFormat = "The event with the ID %@ could not be found"
-    let eventStore = EKEventStore()
+    let eventStore = SingleEventStore.shared.eventStore
     let requestPermissionsMethod = "requestPermissions"
     let hasPermissionsMethod = "hasPermissions"
     let retrieveCalendarsMethod = "retrieveCalendars"
@@ -932,7 +942,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
     private func hasEventPermissions() -> Bool {
         let status = EKEventStore.authorizationStatus(for: .event)
         if #available(iOS 17, *) {
-            return status == EKAuthorizationStatus.fullAccess
+            return (status == EKAuthorizationStatus.fullAccess || status == EKAuthorizationStatus.writeOnly)
         } else {
             return status == EKAuthorizationStatus.authorized
         }
